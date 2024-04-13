@@ -43,24 +43,44 @@ jobs:
         run: |
           sudo apt-get update
           echo "BOX64_COMPILER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-          sudo apt-get -y install git gcc-aarch64-linux-gnu cmake make python3
+          echo "BOX86_COMPILER=arm-linux-gnueabihf-gcc" >> $GITHUB_ENV
+          sudo apt-get -y install git gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf cmake make python3
+          git clone https://github.com/ptitSeb/box86.git
 
       - name: "Build Box64"
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX64_COMPILER }} -DSD845=ON\
+          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX64_COMPILER }} -DSD845=ON -DBAD_SIGNAL=ON\
                    -DCMAKE_BUILD_TYPE=${{ github.event.inputs.build_type }}\
                    -DARM_DYNAREC:BOOL=${{ github.event.inputs.dynarec }}\
                    -DHAVE_TRACE:BOOL=${{ github.event.inputs.trace }}\
                    -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
           make -j$(nproc) VERBOSE=1
+          cd ..
+
+      - name: "Build Box86"
+        run: |
+          cd box86
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX86_COMPILER }} -DSD845=ON -DBAD_SIGNAL=ON\
+                   -DCMAKE_BUILD_TYPE=${{ github.event.inputs.build_type }}\
+                   -DARM_DYNAREC:BOOL=${{ github.event.inputs.dynarec }}\
+                   -DHAVE_TRACE:BOOL=${{ github.event.inputs.trace }}\
+                   -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+          make -j$(nproc) VERBOSE=1
+          cd ../..
+          mkdir buildsss
+          cp build/box64 buildsss
+          cp box86/build/box86 buildsss
+          
 
       - name: "Upload Artifact"
         uses: actions/upload-artifact@v4
         with:
-          name: box64-test
-          path: build/box64
+          name: box64_box86
+          path: buildsss
 
 
 
