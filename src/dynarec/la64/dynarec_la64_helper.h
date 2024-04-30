@@ -364,6 +364,10 @@
     j64 = GET##M - dyn->native_size; \
     B##OP##Z(reg, j64)
 
+#define BCxxZ_gen(OP, M, fcc)        \
+    j64 = GET##M - dyn->native_size; \
+    BC##OP##Z(fcc, j64)
+
 // Branch to MARK if reg1!=reg2 (use j64)
 #define BNE_MARK(reg1, reg2) Bxx_gen(NE, MARK, reg1, reg2)
 // Branch to MARK2 if reg1!=reg2 (use j64)
@@ -393,6 +397,24 @@
 // Branch to MARKLOCK if reg1!=0 (use j64)
 #define BNEZ_MARKLOCK(reg) BxxZ_gen(NE, MARKLOCK, reg)
 
+// Branch to MARK if fcc!=0 (use j64)
+#define BCNEZ_MARK(fcc) BCxxZ_gen(NE, MARK, fcc)
+// Branch to MARK2 if fcc!=0 (use j64)
+#define BCNEZ_MARK2(fcc) BCxxZ_gen(NE, MARK2, fcc)
+// Branch to MARK3 if fcc!=0 (use j64)
+#define BCNEZ_MARK3(fcc) BCxxZ_gen(NE, MARK3, fcc)
+// Branch to MARKLOCK if fcc!=0 (use j64)
+#define BCNEZ_MARKLOCK(fcc) BxxZ_gen(NE, MARKLOCK, fcc)
+
+// Branch to MARK if fcc==0 (use j64)
+#define BCEQZ_MARK(fcc) BCxxZ_gen(EQ, MARK, fcc)
+// Branch to MARK2 if fcc==0 (use j64)
+#define BCEQZ_MARK2(fcc) BCxxZ_gen(EQ, MARK2, fcc)
+// Branch to MARK3 if fcc==0 (use j64)
+#define BCEQZ_MARK3(fcc) BCxxZ_gen(EQ, MARK3, fcc)
+// Branch to MARKLOCK if fcc==0 (use j64)
+#define BCEQZ_MARKLOCK(fcc) BxxZ_gen(EQ, MARKLOCK, fcc)
+
 // Branch to MARK if reg1<reg2 (use j64)
 #define BLT_MARK(reg1, reg2) Bxx_gen(LT, MARK, reg1, reg2)
 // Branch to MARK if reg1<reg2 (use j64)
@@ -418,6 +440,24 @@
 #define B_NEXT_nocond                                                         \
     j64 = (dyn->insts) ? (dyn->insts[ninst].epilog - (dyn->native_size)) : 0; \
     B(j64)
+// Branch to NEXT if fcc==0 (use j64)
+#define CBCZ_NEXT(fcc)                                                        \
+    j64 = (dyn->insts) ? (dyn->insts[ninst].epilog - (dyn->native_size)) : 0; \
+    BCEQZ(fcc, j64)
+// Branch to NEXT if fcc!=0 (use j64)
+#define CBCNZ_NEXT(fcc)                                                       \
+    j64 = (dyn->insts) ? (dyn->insts[ninst].epilog - (dyn->native_size)) : 0; \
+    BCNEZ(fcc, j64)
+
+// Branch to NEXT if reg1==reg2 (use j64)
+#define BEQ_NEXT(reg1, reg2)                                                  \
+    j64 = (dyn->insts) ? (dyn->insts[ninst].epilog - (dyn->native_size)) : 0; \
+    BEQ(reg1, reg2, j64)
+
+// Branch to NEXT if reg1!=reg2 (use j64)
+#define BNE_NEXT(reg1, reg2)                                                  \
+    j64 = (dyn->insts) ? (dyn->insts[ninst].epilog - (dyn->native_size)) : 0; \
+    BNE(reg1, reg2, j64)
 
 // Branch to MARKSEG if reg is 0 (use j64)
 #define CBZ_MARKSEG(reg)                   \
@@ -683,6 +723,8 @@ void* la64_next(x64emu_t* emu, uintptr_t addr);
 #define emit_add32c         STEPNAME(emit_add32c)
 #define emit_add8           STEPNAME(emit_add8)
 #define emit_add8c          STEPNAME(emit_add8c)
+#define emit_add16          STEPNAME(emit_add16)
+#define emit_sub16          STEPNAME(emit_sub16)
 #define emit_sub32          STEPNAME(emit_sub32)
 #define emit_sub32c         STEPNAME(emit_sub32c)
 #define emit_sub8           STEPNAME(emit_sub8)
@@ -695,6 +737,7 @@ void* la64_next(x64emu_t* emu, uintptr_t addr);
 #define emit_or32c          STEPNAME(emit_or32c)
 #define emit_or8            STEPNAME(emit_or8)
 #define emit_or8c           STEPNAME(emit_or8c)
+#define emit_xor8           STEPNAME(emit_xor8)
 #define emit_xor8c          STEPNAME(emit_xor8c)
 #define emit_xor32          STEPNAME(emit_xor32)
 #define emit_xor32c         STEPNAME(emit_xor32c)
@@ -708,6 +751,7 @@ void* la64_next(x64emu_t* emu, uintptr_t addr);
 #define emit_shr32c         STEPNAME(emit_shr32c)
 #define emit_sar32c         STEPNAME(emit_sar32c)
 #define emit_ror32c         STEPNAME(emit_ror32c)
+#define emit_rol32          STEPNAME(emit_rol32)
 
 #define emit_pf STEPNAME(emit_pf)
 
@@ -757,6 +801,8 @@ void emit_add32(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, int s2, int s
 void emit_add32c(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, int64_t c, int s2, int s3, int s4, int s5);
 void emit_add8(dynarec_la64_t* dyn, int ninst, int s1, int s2, int s3, int s4);
 void emit_add8c(dynarec_la64_t* dyn, int ninst, int s1, int32_t c, int s2, int s3, int s4);
+void emit_add16(dynarec_la64_t* dyn, int ninst, int s1, int s2, int s3, int s4, int s5);
+void emit_sub16(dynarec_la64_t* dyn, int ninst, int s1, int s2, int s3, int s4, int s5);
 void emit_sub32(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, int s2, int s3, int s4, int s5);
 void emit_sub32c(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, int64_t c, int s2, int s3, int s4, int s5);
 void emit_sub8(dynarec_la64_t* dyn, int ninst, int s1, int s2, int s3, int s4, int s5);
@@ -769,6 +815,7 @@ void emit_or32(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, int s2, int s3
 void emit_or32c(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, int64_t c, int s3, int s4);
 void emit_or8(dynarec_la64_t* dyn, int ninst, int s1, int s2, int s3, int s4);
 void emit_or8c(dynarec_la64_t* dyn, int ninst, int s1, int32_t c, int s2, int s3, int s4);
+void emit_xor8(dynarec_la64_t* dyn, int ninst, int s1, int s2, int s3, int s4);
 void emit_xor8c(dynarec_la64_t* dyn, int ninst, int s1, int32_t c, int s3, int s4);
 void emit_xor32c(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, int64_t c, int s3, int s4);
 void emit_xor32(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, int s2, int s3, int s4);
@@ -782,6 +829,7 @@ void emit_shr32(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, int s2, int s
 void emit_shr32c(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, uint32_t c, int s3, int s4);
 void emit_sar32c(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, uint32_t c, int s3, int s4);
 void emit_ror32c(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, uint32_t c, int s3, int s4);
+void emit_rol32(dynarec_la64_t* dyn, int ninst, rex_t rex, int s1, int s2, int s3, int s4);
 
 void emit_pf(dynarec_la64_t* dyn, int ninst, int s1, int s3, int s4);
 

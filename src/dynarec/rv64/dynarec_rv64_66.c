@@ -86,6 +86,17 @@ uintptr_t dynarec64_66(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
             AND(xRAX, xRAX, x3);
             OR(xRAX, xRAX, x1);
             break;
+        case 0x06:
+            INST_NAME("PUSH ES");
+            LHU(x1, xEmu, offsetof(x64emu_t, segs[_ES]));
+            PUSH1_16(x1);
+            break;
+        case 0x07:
+            INST_NAME("POP ES");
+            POP1_16(x1);
+            SH(x1, xEmu, offsetof(x64emu_t, segs[_ES]));
+            SW(xZR, xEmu, offsetof(x64emu_t, segs_serial[_ES]));
+            break;
         case 0x09:
             INST_NAME("OR Ew, Gw");
             SETFLAGS(X_ALL, SF_SET_PENDING);
@@ -190,6 +201,17 @@ uintptr_t dynarec64_66(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
             SRLI(xRAX, xRAX, 16);
             SLLI(xRAX, xRAX, 16);
             OR(xRAX, xRAX, x1);
+            break;
+        case 0x1E:
+            INST_NAME("PUSH DS");
+            LHU(x1, xEmu, offsetof(x64emu_t, segs[_DS]));
+            PUSH1_16(x1);
+            break;
+        case 0x1F:
+            INST_NAME("POP DS");
+            POP1_16(x1);
+            SH(x1, xEmu, offsetof(x64emu_t, segs[_DS]));
+            SW(xZR, xEmu, offsetof(x64emu_t, segs_serial[_DS]));
             break;
         case 0x21:
             INST_NAME("AND Ew, Gw");
@@ -1193,6 +1215,16 @@ uintptr_t dynarec64_66(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
                     SLLI(x3, xRDX, 48);
                     SRLI(x3, x3, 32);
                     OR(x2, x2, x3);
+                    if(box64_dynarec_div0) {
+                        BNE_MARK3(ed, xZR);
+                        GETIP_(ip);
+                        STORE_XEMU_CALL(x6);
+                        CALL(native_div0, -1);
+                        CLEARIP();
+                        LOAD_XEMU_CALL();
+                        jump_to_epilog(dyn, 0, xRIP, ninst);
+                        MARK3;
+                    }
                     DIVUW(x3, x2, ed);
                     REMUW(x4, x2, ed);
                     MOV64x(x5, ~0xffff);
@@ -1209,6 +1241,16 @@ uintptr_t dynarec64_66(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
                     NOTEST(x1);
                     SETFLAGS(X_ALL, SF_SET);
                     GETSEW(x1, 0);
+                    if(box64_dynarec_div0) {
+                        BNE_MARK3(ed, xZR);
+                        GETIP_(ip);
+                        STORE_XEMU_CALL(x6);
+                        CALL(native_div0, -1);
+                        CLEARIP();
+                        LOAD_XEMU_CALL();
+                        jump_to_epilog(dyn, 0, xRIP, ninst);
+                        MARK3;
+                    }
                     ZEXTH(x2, xRAX);
                     SLLI(x3, xRDX, 48);
                     SRLI(x3, x3, 32);

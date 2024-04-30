@@ -234,7 +234,7 @@ void CloneEmu(x64emu_t *newemu, const x64emu_t* emu)
 	memcpy(newemu->mmx, emu->mmx, sizeof(emu->mmx));
     memcpy(newemu->fpu_ld, emu->fpu_ld, sizeof(emu->fpu_ld));
     memcpy(newemu->fpu_ll, emu->fpu_ll, sizeof(emu->fpu_ll));
-	memcpy(newemu->p_regs, emu->p_regs, sizeof(emu->p_regs));
+    newemu->fpu_tags = emu->fpu_tags;
 	newemu->cw = emu->cw;
 	newemu->sw = emu->sw;
 	newemu->top = emu->top;
@@ -270,7 +270,7 @@ void CopyEmu(x64emu_t *newemu, const x64emu_t* emu)
     memcpy(newemu->xmm, emu->xmm, sizeof(emu->xmm));
     memcpy(newemu->fpu_ld, emu->fpu_ld, sizeof(emu->fpu_ld));
     memcpy(newemu->fpu_ll, emu->fpu_ll, sizeof(emu->fpu_ll));
-	memcpy(newemu->p_regs, emu->p_regs, sizeof(emu->p_regs));
+    newemu->fpu_tags = emu->fpu_tags;
 	newemu->cw = emu->cw;
 	newemu->sw = emu->sw;
 	newemu->top = emu->top;
@@ -427,7 +427,9 @@ const char* DumpCPURegs(x64emu_t* emu, uintptr_t ip, int is32bits)
 #endif
     // start with FPU regs...
     if(emu->fpu_stack) {
-        for (int i=0; i<emu->fpu_stack; i++) {
+        int stack = emu->fpu_stack;
+        if(stack>8) stack = 8;
+        for (int i=0; i<stack; i++) {
             sprintf(tmp, "ST%d=%f", i, ST(i).d);
             strcat(buff, tmp);
             int c = 10-strlen(tmp);
@@ -435,6 +437,8 @@ const char* DumpCPURegs(x64emu_t* emu, uintptr_t ip, int is32bits)
             while(c--) strcat(buff, " ");
             if(i==3) strcat(buff, "\n");
         }
+        sprintf(tmp, " C3210 = %d%d%d%d", emu->sw.f.F87_C3, emu->sw.f.F87_C2, emu->sw.f.F87_C1, emu->sw.f.F87_C0);
+        strcat(buff, tmp);
         strcat(buff, "\n");
     }
     for (int i=0; i<6; ++i) {
