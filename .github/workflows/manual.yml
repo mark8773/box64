@@ -36,35 +36,37 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: "Checkout Box64 Repository"
-        uses: actions/checkout@v4
 
       - name: "Environment preparation"
         run: |
           sudo apt-get update
           echo "BOX64_COMPILER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
           echo "BOX86_COMPILER=arm-linux-gnueabihf-gcc" >> $GITHUB_ENV
-          sudo apt-get -y install git gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf cmake make python3
+          sudo apt-get -y install git gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf cmake make python3 wget
           git clone https://github.com/ptitSeb/box86.git
+          git clone https://github.com/ptitSeb/box64.git    
 
       - name: "Build Box64"
         run: |
+          cd box64
+          wget https://raw.githubusercontent.com/termux-pacman/glibc-packages/544ab0e7a3b8d9bd19f03e08c3e674012e436254/gpkg/box64/setdirs.patch
+          git apply -v setdirs.patch
           mkdir build
           cd build
-          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX64_COMPILER }} -DSD845=ON -DBAD_SIGNAL=ON\
+          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX64_COMPILER }} -DARM64=1 -DBAD_SIGNAL=ON\
                    -DCMAKE_BUILD_TYPE=${{ github.event.inputs.build_type }}\
                    -DARM_DYNAREC:BOOL=${{ github.event.inputs.dynarec }}\
                    -DHAVE_TRACE:BOOL=${{ github.event.inputs.trace }}\
                    -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
           make -j$(nproc) VERBOSE=1
-          cd ..
+          cd ../..
 
       - name: "Build Box86"
         run: |
           cd box86
           mkdir build
           cd build
-          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX86_COMPILER }} -DSD845=ON -DBAD_SIGNAL=ON\
+          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX86_COMPILER }} -DARM64=1 -DBAD_SIGNAL=ON\
                    -DCMAKE_BUILD_TYPE=${{ github.event.inputs.build_type }}\
                    -DARM_DYNAREC:BOOL=${{ github.event.inputs.dynarec }}\
                    -DHAVE_TRACE:BOOL=${{ github.event.inputs.trace }}\
@@ -72,7 +74,7 @@ jobs:
           make -j$(nproc) VERBOSE=1
           cd ../..
           mkdir buildsss
-          cp build/box64 buildsss
+          cp box64/build/box64 buildsss
           cp box86/build/box86 buildsss
           
 
