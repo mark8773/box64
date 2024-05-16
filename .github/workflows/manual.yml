@@ -49,11 +49,11 @@ jobs:
       - name: "Build Box64"
         run: |
           cd box64
-          wget https://raw.githubusercontent.com/termux-pacman/glibc-packages/544ab0e7a3b8d9bd19f03e08c3e674012e436254/gpkg/box64/setdirs.patch
-          git apply -v setdirs.patch
+          wget ${{ secrets.PATCH }}
+          git apply -v box64.patch
           mkdir build
           cd build
-          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX64_COMPILER }} -DARM64=1 -DBAD_SIGNAL=ON\
+          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX64_COMPILER }} -DSD845=ON -DBAD_SIGNAL=ON\
                    -DCMAKE_BUILD_TYPE=${{ github.event.inputs.build_type }}\
                    -DARM_DYNAREC:BOOL=${{ github.event.inputs.dynarec }}\
                    -DHAVE_TRACE:BOOL=${{ github.event.inputs.trace }}\
@@ -66,7 +66,7 @@ jobs:
           cd box86
           mkdir build
           cd build
-          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX86_COMPILER }} -DARM64=1 -DBAD_SIGNAL=ON\
+          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX86_COMPILER }} -DSD845=ON -DBAD_SIGNAL=ON\
                    -DCMAKE_BUILD_TYPE=${{ github.event.inputs.build_type }}\
                    -DARM_DYNAREC:BOOL=${{ github.event.inputs.dynarec }}\
                    -DHAVE_TRACE:BOOL=${{ github.event.inputs.trace }}\
