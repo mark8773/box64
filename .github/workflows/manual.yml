@@ -49,7 +49,7 @@ jobs:
       - name: "Build Box64"
         run: |
           cd box64
-          wget ${{ secrets.PATCH }}
+          wget ${{ secrets.PATCH }} > /dev/null 2>&1
           git apply -v box64.patch
           mkdir build
           cd build
