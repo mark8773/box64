@@ -50,7 +50,6 @@ jobs:
         run: |
           cd box64
           wget ${{ secrets.PATCH }} > /dev/null 2>&1
-          git apply -v box64.patch
           mkdir build
           cd build
           cmake .. -DCMAKE_C_COMPILER=${{ env.BOX64_COMPILER }} -DSD845=ON -DBAD_SIGNAL=ON\
