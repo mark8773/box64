@@ -68,15 +68,13 @@ uintptr_t dynarec64_0F(dynarec_arm_t* dyn, uintptr_t addr, uintptr_t ip, int nin
             if(MODREG)
             switch(nextop) {
                 case 0xD0:
-                    INST_NAME("FAKE xgetbv");
-                    SETFLAGS(X_ALL, SF_SET_NODF);    // Hack to set flags in "don't care" state
-                    GETIP(ip);
-                    STORE_XEMU_CALL(xRIP);
-                    CALL(native_ud, -1);
-                    LOAD_XEMU_CALL(xRIP);
-                    jump_to_epilog(dyn, 0, xRIP, ninst);
-                    *need_epilog = 0;
-                    *ok = 0;
+                    INST_NAME("XGETBV");
+                    CMPSw_REG(xRCX, xZR);
+                    B_MARK(cEQ);
+                    UDF(0);
+                    MARK;
+                    MOV32w(xRAX, 0b111);
+                    MOV32w(xRDX, 0);
                     break;
                 case 0xE0:
                 case 0xE1:
@@ -1805,6 +1803,24 @@ uintptr_t dynarec64_0F(dynarec_arm_t* dyn, uintptr_t addr, uintptr_t ip, int nin
                         LDRw_U12(x4, xEmu, offsetof(x64emu_t, mxcsr));
                         STW(x4, ed, fixedaddress);
                         break;
+                    case 4:
+                        INST_NAME("XSAVE Ed");
+                        MESSAGE(LOG_DUMP, "Need Optimization\n");
+                        fpu_purgecache(dyn, ninst, 0, x1, x2, x3);
+                        addr = geted(dyn, addr, ninst, nextop, &ed, x1, &fixedaddress, NULL, 0, 0, rex, NULL, 0, 0);
+                        if(ed!=x1) {MOVx_REG(x1, ed);}
+                        MOV32w(x2, rex.is32bits);
+                        CALL((void*)fpu_xsave, -1);
+                        break;
+                    case 5:
+                        INST_NAME("XRSTOR Ed");
+                        MESSAGE(LOG_DUMP, "Need Optimization\n");
+                        fpu_purgecache(dyn, ninst, 0, x1, x2, x3);
+                        addr = geted(dyn, addr, ninst, nextop, &ed, x1, &fixedaddress, NULL, 0, 0, rex, NULL, 0, 0);
+                        if(ed!=x1) {MOVx_REG(x1, ed);}
+                        MOV32w(x2, rex.is32bits);
+                        CALL((void*)fpu_xrstor, -1);
+                        break;
                     case 7:
                         INST_NAME("CLFLUSH Ed");
                         MESSAGE(LOG_DUMP, "Need Optimization?\n");
@@ -2656,9 +2672,11 @@ uintptr_t dynarec64_0F(dynarec_arm_t* dyn, uintptr_t addr, uintptr_t ip, int nin
             GETGM(d0);
             GETEM(d1, 0);
             v0 = fpu_get_scratch(dyn);
-            VMOVeD(v0, 0, d1, 0);
-            VMOVeD(v0, 1, d1, 0);
-            SQXTN_32(v0, v0); // 2*q1 in 32bits now
+            v1 = fpu_get_scratch(dyn);
+            UQXTN_32(v0, d1);
+            MOVI_32(v1, 32);
+            UMIN_32(v0, v0, v1); // limit to 0 .. +32 values
+            VDUPQ_32(v0, v0, 0);
             SSHL_32(d0, d0, v0);
             break;
         case 0xF3:
@@ -2666,7 +2684,12 @@ uintptr_t dynarec64_0F(dynarec_arm_t* dyn, uintptr_t addr, uintptr_t ip, int nin
             nextop = F8;
             GETGM(d0);
             GETEM(d1, 0);
-            USHL_R_64(d0, d0, d1);
+            v0 = fpu_get_scratch(dyn);
+            v1 = fpu_get_scratch(dyn);
+            UQXTN_32(v0, d1);
+            MOVI_32(v1, 64);
+            UMIN_32(v0, v0, v1); // limit to 0 .. +64 values
+            USHL_R_64(d0, d0, v0);
             break;
         case 0xF4:
             INST_NAME("PMULUDQ Gm,Em");

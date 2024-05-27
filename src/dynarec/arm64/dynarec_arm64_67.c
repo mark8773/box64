@@ -37,6 +37,7 @@ uintptr_t dynarec64_67(dynarec_arm_t* dyn, uintptr_t addr, uintptr_t ip, int nin
     uint8_t u8;
     int32_t i32;
     int64_t j64, i64;
+    int16_t i16;
     int cacheupd = 0;
     int lock;
     int v0, v1, s0;
@@ -656,6 +657,111 @@ uintptr_t dynarec64_67(dynarec_arm_t* dyn, uintptr_t addr, uintptr_t ip, int nin
             GETREX();
             switch(opcode) {
 
+                case 0x0F:
+                    nextop = F8;
+                    switch(nextop) {
+                        case 0xD6:
+                            INST_NAME("MOVQ Ex, Gx");
+                            nextop = F8;
+                            GETGX(v0, 0);
+                            if(MODREG) {
+                                v1 = sse_get_reg_empty(dyn, ninst, x1, (nextop&7) + (rex.b<<3));
+                                FMOVD(v1, v0);
+                            } else {
+                                WILLWRITE2();
+                                addr = geted32(dyn, addr, ninst, nextop, &ed, x1, &fixedaddress, &unscaled, 0xfff<<3, 7, rex, NULL, 0, 0);
+                                VST64(v0, ed, fixedaddress);
+                                SMWRITE2();
+                            }
+                            break;
+
+                            default:
+                                DEFAULT;
+                    }
+                    break;
+
+                    case 0x81:
+                    case 0x83:
+                        nextop = F8;
+                        switch((nextop>>3)&7) {
+                            case 0: //ADD
+                                if(opcode==0x81) {INST_NAME("ADD Ew, Iw");} else {INST_NAME("ADD Ew, Ib");}
+                                SETFLAGS(X_ALL, SF_SET_PENDING);
+                                GETEW32(x1, (opcode==0x81)?2:1);
+                                if(opcode==0x81) i16 = F16S; else i16 = F8S;
+                                MOVZw(x5, i16);
+                                emit_add16(dyn, ninst, ed, x5, x2, x4);
+                                EWBACK;
+                                break;
+                            case 1: //OR
+                                if(opcode==0x81) {INST_NAME("OR Ew, Iw");} else {INST_NAME("OR Ew, Ib");}
+                                SETFLAGS(X_ALL, SF_SET_PENDING);
+                                GETEW32(x1, (opcode==0x81)?2:1);
+                                if(opcode==0x81) i16 = F16S; else i16 = F8S;
+                                MOVZw(x5, i16);
+                                emit_or16(dyn, ninst, x1, x5, x2, x4);
+                                EWBACK;
+                                break;
+                            case 2: //ADC
+                                if(opcode==0x81) {INST_NAME("ADC Ew, Iw");} else {INST_NAME("ADC Ew, Ib");}
+                                READFLAGS(X_CF);
+                                SETFLAGS(X_ALL, SF_SET_PENDING);
+                                GETEW32(x1, (opcode==0x81)?2:1);
+                                if(opcode==0x81) i16 = F16S; else i16 = F8S;
+                                MOVZw(x5, i16);
+                                emit_adc16(dyn, ninst, x1, x5, x2, x4);
+                                EWBACK;
+                                break;
+                            case 3: //SBB
+                                if(opcode==0x81) {INST_NAME("SBB Ew, Iw");} else {INST_NAME("SBB Ew, Ib");}
+                                READFLAGS(X_CF);
+                                SETFLAGS(X_ALL, SF_SET_PENDING);
+                                GETEW32(x1, (opcode==0x81)?2:1);
+                                if(opcode==0x81) i16 = F16S; else i16 = F8S;
+                                MOVZw(x5, i16);
+                                emit_sbb16(dyn, ninst, x1, x5, x2, x4);
+                                EWBACK;
+                                break;
+                            case 4: //AND
+                                if(opcode==0x81) {INST_NAME("AND Ew, Iw");} else {INST_NAME("AND Ew, Ib");}
+                                SETFLAGS(X_ALL, SF_SET_PENDING);
+                                GETEW32(x1, (opcode==0x81)?2:1);
+                                if(opcode==0x81) i16 = F16S; else i16 = F8S;
+                                MOVZw(x5, i16);
+                                emit_and16(dyn, ninst, x1, x5, x2, x4);
+                                EWBACK;
+                                break;
+                            case 5: //SUB
+                                if(opcode==0x81) {INST_NAME("SUB Ew, Iw");} else {INST_NAME("SUB Ew, Ib");}
+                                SETFLAGS(X_ALL, SF_SET_PENDING);
+                                GETEW32(x1, (opcode==0x81)?2:1);
+                                if(opcode==0x81) i16 = F16S; else i16 = F8S;
+                                MOVZw(x5, i16);
+                                emit_sub16(dyn, ninst, x1, x5, x2, x4);
+                                EWBACK;
+                                break;
+                            case 6: //XOR
+                                if(opcode==0x81) {INST_NAME("XOR Ew, Iw");} else {INST_NAME("XOR Ew, Ib");}
+                                SETFLAGS(X_ALL, SF_SET_PENDING);
+                                GETEW32(x1, (opcode==0x81)?2:1);
+                                if(opcode==0x81) i16 = F16S; else i16 = F8S;
+                                MOVZw(x5, i16);
+                                emit_xor16(dyn, ninst, x1, x5, x2, x4);
+                                EWBACK;
+                                break;
+                            case 7: //CMP
+                                if(opcode==0x81) {INST_NAME("CMP Ew, Iw");} else {INST_NAME("CMP Ew, Ib");}
+                                SETFLAGS(X_ALL, SF_SET_PENDING);
+                                GETEW32(x1, (opcode==0x81)?2:1);
+                                if(opcode==0x81) i16 = F16S; else i16 = F8S;
+                                if(i16) {
+                                    MOVZw(x2, i16);
+                                    emit_cmp16(dyn, ninst, x1, x2, x3, x4, x5);
+                                } else
+                                    emit_cmp16_0(dyn, ninst, x1, x3, x4);
+                                break;
+                        }
+                        break;
                 case 0x89:
                     INST_NAME("MOV Ew, Gw");
                     nextop = F8;
@@ -934,25 +1040,21 @@ uintptr_t dynarec64_67(dynarec_arm_t* dyn, uintptr_t addr, uintptr_t ip, int nin
                     break;
                 case 2:
                     INST_NAME("RCL Ed, Ib");
-                    MESSAGE(LOG_DUMP, "Need Optimization\n");
                     READFLAGS(X_CF);
-                    SETFLAGS(X_OF|X_CF, SF_SET_DF);
-                    GETED32W(x4, x1, 1);
-                    u8 = F8;
-                    MOV32w(x2, u8);
-                    CALL_(rex.w?((void*)rcl64):((void*)rcl32), ed, x4);
-                    WBACK;
+                    SETFLAGS(X_OF|X_CF, SF_SUBSET); // removed PENDING on purpose
+                    GETED32(1);
+                    u8 = (F8)&(rex.w?0x3f:0x1f);
+                    emit_rcl32c(dyn, ninst, rex, ed, u8, x3, x4);
+                    if(u8) { WBACK; }
                     break;
                 case 3:
                     INST_NAME("RCR Ed, Ib");
-                    MESSAGE(LOG_DUMP, "Need Optimization\n");
                     READFLAGS(X_CF);
-                    SETFLAGS(X_OF|X_CF, SF_SET_DF);
-                    GETED32W(x4, x1, 1);
-                    u8 = F8;
-                    MOV32w(x2, u8);
-                    CALL_(rex.w?((void*)rcr64):((void*)rcr32), ed, x4);
-                    WBACK;
+                    SETFLAGS(X_OF|X_CF, SF_SUBSET); // removed PENDING on purpose
+                    GETED32(1);
+                    u8 = (F8)&(rex.w?0x3f:0x1f);
+                    emit_rcr32c(dyn, ninst, rex, ed, u8, x3, x4);
+                    if(u8) { WBACK; }
                     break;
                 case 4:
                 case 6:

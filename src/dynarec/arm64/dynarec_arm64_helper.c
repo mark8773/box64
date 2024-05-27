@@ -696,6 +696,7 @@ void iret_to_epilog(dynarec_arm_t* dyn, int ninst, int is64bits)
     MAYUSE(ninst);
     MESSAGE(LOG_DUMP, "IRet to epilog\n");
     SMEND();
+    SET_DFNONE(x2);
     // POP IP
     NOTEST(x2);
     if(is64bits) {
@@ -893,7 +894,7 @@ void x87_unstackcount(dynarec_arm_t* dyn, int ninst, int scratch, int count)
         return;
     if(dyn->n.mmxcount)
         mmx_purgecache(dyn, ninst, 0, scratch);
-    MESSAGE(LOG_DUMP, "\tUnsynch x87 Stackcount (%d)\n", count);
+    MESSAGE(LOG_DUMP, "\tUnsynch x87 Unstackcount (%d)\n", count);
     int a = -count;
     // Add x87stack to emu fpu_stack
     LDRw_U12(scratch, xEmu, offsetof(x64emu_t, fpu_stack));
@@ -1071,7 +1072,7 @@ void x87_purgecache(dynarec_arm_t* dyn, int ninst, int next, int s1, int s2, int
         }
         ANDw_mask(s2, s2, 0, 2);
         STRw_U12(s2, xEmu, offsetof(x64emu_t, top));
-        // update tags (and top at the same time)
+        // update tags
         LDRH_U12(s1, xEmu, offsetof(x64emu_t, fpu_tags));
         if(a>0) {
             LSLw_IMM(s1, s1, a*2);
@@ -2154,17 +2155,14 @@ void fpu_unreflectcache(dynarec_arm_t* dyn, int ninst, int s1, int s2, int s3)
     x87_unreflectcache(dyn, ninst, s1, s2, s3);
 }
 
-void emit_pf(dynarec_arm_t* dyn, int ninst, int s1, int s3, int s4)
+void emit_pf(dynarec_arm_t* dyn, int ninst, int s1, int s4)
 {
     MAYUSE(dyn); MAYUSE(ninst);
-    MAYUSE(s1); MAYUSE(s3); MAYUSE(s4);
-    // PF: (((emu->x64emu_parity_tab[(res) / 32] >> ((res) % 32)) & 1) == 0)
-    ANDw_mask(s3, s1, 0b011011, 0b000010); // mask=0xE0
-    LSRw(s3, s3, 5);
-    TABLE64(s4, (uintptr_t)GetParityTab());
-    LDRw_REG_LSL2(s4, s4, s3);
-    ANDw_mask(s3, s1, 0, 0b000100); //0x1f
-    LSRw_REG(s4, s4, s3);
+    MAYUSE(s1); MAYUSE(s4);
+    // by xor'ing all the bit 2 by two with a shift, pair of bits are removed, and only 1 is left if bit number if odd
+    EORw_REG_LSR(s4, s1, s1, 4);
+    EORw_REG_LSR(s4, s4, s4, 2);
+    EORw_REG_LSR(s4, s4, s4, 1);
     MVNw_REG(s4, s4);
     BFIw(xFlags, s4, F_PF, 1);
 }

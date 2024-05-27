@@ -66,7 +66,9 @@ uintptr_t dynarec64_0F(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
             if(MODREG) {
                 switch(nextop) {
                     case 0xD0:
-                        INST_NAME("FAKE xgetbv");
+                        //TODO
+                        DEFAULT;
+                        /*INST_NAME("FAKE xgetbv");
                         nextop = F8;
                         addr = fakeed(dyn, addr, ninst, nextop);
                         SETFLAGS(X_ALL, SF_SET_NODF); // Hack to set flags in "don't care" state
@@ -76,7 +78,7 @@ uintptr_t dynarec64_0F(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
                         LOAD_XEMU_CALL();
                         jump_to_epilog(dyn, 0, xRIP, ninst);
                         *need_epilog = 0;
-                        *ok = 0;
+                        *ok = 0;*/
                         break;
 
                     case 0xF9:
@@ -1000,6 +1002,10 @@ uintptr_t dynarec64_0F(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
             GETGM();
             if (MODREG) {
                 ed = xRAX + (nextop & 7) + (rex.b << 3);
+                if (!rex.w) {
+                    AND(x4, ed, xMASK);
+                    ed = x4;
+                }
             } else {
                 addr = geted(dyn, addr, ninst, nextop, &ed, x3, x2, &fixedaddress, rex, NULL, 1, 0);
                 LDxw(x4, ed, fixedaddress);
@@ -1021,8 +1027,8 @@ uintptr_t dynarec64_0F(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
             GETGM();
             GETEM(x2, 1);
             u8 = F8;
-            LHU(x3, gback, gdoffset + ((u8 >> (0 * 2)) & 3) * 2);
-            LHU(x4, gback, gdoffset + ((u8 >> (1 * 2)) & 3) * 2);
+            LHU(x3, wback, fixedaddress + ((u8 >> (0 * 2)) & 3) * 2);
+            LHU(x4, wback, fixedaddress + ((u8 >> (1 * 2)) & 3) * 2);
             LHU(x5, wback, fixedaddress + ((u8 >> (2 * 2)) & 3) * 2);
             LHU(x6, wback, fixedaddress + ((u8 >> (3 * 2)) & 3) * 2);
             SH(x3, gback, gdoffset + 0 * 2);
@@ -1351,6 +1357,8 @@ uintptr_t dynarec64_0F(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
             if (wback) {
                 SDxw(ed, wback, fixedaddress);
                 SMWRITE();
+            } else if(!rex.w) {
+                ZEROUP(ed);
             }
             break;
         case 0xAC:
@@ -1522,6 +1530,8 @@ uintptr_t dynarec64_0F(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
             if (wback) {
                 SDxw(ed, wback, fixedaddress);
                 SMWRITE();
+            } else if(!rex.w) {
+                ZEROUP(ed);
             }
             break;
         case 0xB6:
@@ -1600,6 +1610,8 @@ uintptr_t dynarec64_0F(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
                     if (wback) {
                         SDxw(ed, wback, fixedaddress);
                         SMWRITE();
+                    } else if(!rex.w) {
+                        ZEROUP(ed);
                     }
                     MARK;
                     break;
@@ -1627,6 +1639,8 @@ uintptr_t dynarec64_0F(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
                     if (wback) {
                         SDxw(ed, wback, fixedaddress);
                         SMWRITE();
+                    } else if(!rex.w) {
+                        ZEROUP(ed);
                     }
                     MARK;
                     break;
@@ -1649,6 +1663,8 @@ uintptr_t dynarec64_0F(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
                     if (wback) {
                         SDxw(ed, wback, fixedaddress);
                         SMWRITE();
+                    } else if(!rex.w) {
+                        ZEROUP(ed);
                     }
                     break;
                 default:
@@ -1683,6 +1699,8 @@ uintptr_t dynarec64_0F(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
             if (wback) {
                 SDxw(ed, wback, fixedaddress);
                 SMWRITE();
+            } else if(!rex.w) {
+                ZEROUP(ed);
             }
             break;
         case 0xBC:
@@ -1781,9 +1799,11 @@ uintptr_t dynarec64_0F(dynarec_rv64_t* dyn, uintptr_t addr, uintptr_t ip, int ni
             nextop = F8;
             GETGD;
             GETED(0);
-            MV(x9, ed);
+            if(ed!=gd)
+                MV(x9, ed);
             emit_add32(dyn, ninst, rex, ed, gd, x4, x5, x6);
-            MV(gd, x9);
+            if(ed!=gd)
+                MVxw(gd, x9);
             WBACK;
             break;
         case 0xC2:

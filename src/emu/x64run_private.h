@@ -21,6 +21,22 @@ typedef struct rex_s {
     int     is32bits;
 } rex_t;
 
+#define VEX_P_NONE  0
+#define VEX_P_66    1
+#define VEX_P_F3    2
+#define VEX_P_F2    3
+#define VEX_M_NONE  0
+#define VEX_M_0F    1
+#define VEX_M_OF38  2
+#define VEX_M_0F3A  3
+typedef struct vex_s {
+    rex_t       rex;
+    uint16_t    l:1;
+    uint16_t    p:2;    //0: none, 1: 0x66, 2:0xF3, 3: 0xF2
+    uint16_t    v:4;    // src register
+    uint16_t    m:5;    // opcode map
+} vex_t;
+
 static inline uint8_t Peek(x64emu_t *emu, int offset){return *(uint8_t*)(R_RIP + offset);}
 
 #ifdef TEST_INTERPRETER
@@ -122,6 +138,7 @@ mmx87_regs_t* GetGm(x64emu_t *emu, uintptr_t* addr, rex_t rex, uint8_t v);
 mmx87_regs_t* GetEm32O(x64emu_t *emu, uintptr_t* addr, rex_t rex, uint8_t v, uint8_t delta, uintptr_t offset);
 mmx87_regs_t* TestEm32O(x64test_t *test, uintptr_t* addr, rex_t rex, uint8_t v, uint8_t delta, uintptr_t offset);
 sse_regs_t* GetGx(x64emu_t *emu, uintptr_t* addr, rex_t rex, uint8_t v);
+sse_regs_t* GetGy(x64emu_t *emu, uintptr_t* addr, rex_t rex, uint8_t v);
 
 void UpdateFlags(x64emu_t *emu);
 
@@ -155,6 +172,11 @@ uintptr_t RunDF(x64emu_t *emu, rex_t rex, uintptr_t addr);
 uintptr_t RunF0(x64emu_t *emu, rex_t rex, uintptr_t addr);
 uintptr_t RunF20F(x64emu_t *emu, rex_t rex, uintptr_t addr, int *step);
 uintptr_t RunF30F(x64emu_t *emu, rex_t rex, uintptr_t addr);
+uintptr_t RunAVX(x64emu_t *emu, vex_t vex, uintptr_t addr, int *step);
+uintptr_t RunAVX_0F(x64emu_t *emu, vex_t vex, uintptr_t addr, int *step);
+uintptr_t RunAVX_660F(x64emu_t *emu, vex_t vex, uintptr_t addr, int *step);
+uintptr_t RunAVX_F30F(x64emu_t *emu, vex_t vex, uintptr_t addr, int *step);
+
 
 uintptr_t Test0F(x64test_t *test, rex_t rex, uintptr_t addr, int *step);
 uintptr_t Test64(x64test_t *test, rex_t rex, int seg, uintptr_t addr);
@@ -183,6 +205,10 @@ uintptr_t TestDF(x64test_t *test, rex_t rex, uintptr_t addr);
 uintptr_t TestF0(x64test_t *test, rex_t rex, uintptr_t addr);
 uintptr_t TestF20F(x64test_t *test, rex_t rex, uintptr_t addr, int *step);
 uintptr_t TestF30F(x64test_t *test, rex_t rex, uintptr_t addr);
+uintptr_t TestAVX(x64test_t *test, vex_t vex, uintptr_t addr, int *step);
+uintptr_t TestAVX_OF(x64test_t *test, vex_t vex, uintptr_t addr, int *step);
+uintptr_t TestAVX_66OF(x64test_t *test, vex_t vex, uintptr_t addr, int *step);
+uintptr_t TestAVX_F3OF(x64test_t *test, vex_t vex, uintptr_t addr, int *step);
 
 
 void x64Syscall(x64emu_t *emu);
