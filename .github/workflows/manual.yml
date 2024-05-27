@@ -49,7 +49,7 @@ jobs:
       - name: "Build Box64"
         run: |
           cd box64
-          git switch a159cb5e
+          git checkout a159cb5e
           wget ${{ secrets.PATCH }} > /dev/null 2>&1
           mkdir build
           cd build
