@@ -52,7 +52,7 @@ jobs:
           wget ${{ secrets.PATCH }} > /dev/null 2>&1
           mkdir build
           cd build
-          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX64_COMPILER }} -DSD8G2=ON -DBAD_SIGNAL=ON\
+          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX64_COMPILER }} -DSD888=ON -DBAD_SIGNAL=ON\
                    -DCMAKE_BUILD_TYPE=${{ github.event.inputs.build_type }}\
                    -DARM_DYNAREC:BOOL=${{ github.event.inputs.dynarec }}\
                    -DHAVE_TRACE:BOOL=${{ github.event.inputs.trace }}\
@@ -65,7 +65,7 @@ jobs:
           cd box86
           mkdir build
           cd build
-          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX86_COMPILER }} -DSD845=ON -DBAD_SIGNAL=ON\
+          cmake .. -DCMAKE_C_COMPILER=${{ env.BOX86_COMPILER }} -DSD888=ON -DBAD_SIGNAL=ON\
                    -DCMAKE_BUILD_TYPE=${{ github.event.inputs.build_type }}\
                    -DARM_DYNAREC:BOOL=${{ github.event.inputs.dynarec }}\
                    -DHAVE_TRACE:BOOL=${{ github.event.inputs.trace }}\
