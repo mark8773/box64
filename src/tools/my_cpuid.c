@@ -257,7 +257,7 @@ void my_cpuid(x64emu_t* emu, uint32_t tmp32u)
                     //| 1<<12     // fma    // some games treat FMA as AVX
                     | 1<<13     // cx16 (cmpxchg16)
                     | 1<<19     // SSE4_1
-                    | (box64_sse42?(1<<20):0)     // SSE4_2 can be hiden
+                    | box64_sse42<<20     // SSE4_2 can be hiden
                     | 1<<22     // MOVBE
                     | 1<<23     // POPCOUNT
                     | 1<<25     // aesni
@@ -322,8 +322,11 @@ void my_cpuid(x64emu_t* emu, uint32_t tmp32u)
             if(R_ECX==0) {
                 R_EAX = 0;
                 R_EBX = 
-                        //1<<3 |  // BMI1 
-                        //1<<8 | //BMI2
+                        box64_avx<<3 |  // BMI1 
+                        box64_avx2<<5 |  //AVX2
+                        box64_avx2<<8 | //BMI2
+                        box64_avx2<<9 | //VAES
+                        box64_avx2<<19 | //ADX
                         1<<29|  // SHA extension
                         0;
             } else {R_EAX = R_ECX = R_EBX = R_EDX = 0;}
@@ -349,20 +352,6 @@ void my_cpuid(x64emu_t* emu, uint32_t tmp32u)
                 R_ECX = R_EBX = R_EDX = 0;
                 break;
             case 2:
-                // componant 0: x87
-                R_EAX = 160; // size of the x87 block
-                R_EBX = 0;  // offset
-                R_ECX = 0;
-                R_EDX = 0;
-                break;
-            case 3:
-                // componant 1: sse
-                R_EAX = 16*16; // size of the sse block
-                R_EBX = 160;  // offset
-                R_ECX = 0;
-                R_EDX = 0;
-                break;
-            case 4:
                 // componant 2: avx
                 R_EAX = 16*16; // size of the avx block
                 R_EBX = 512+64;  // offset
