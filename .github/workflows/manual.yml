@@ -4,6 +4,10 @@ name: Custom build Box64
 on:
   workflow_dispatch:
     inputs:
+      commit:
+        description: 'Needed commit'
+        required: true
+        default: 'main'
       platform:
         description: 'Target platform name'
         required: true
@@ -44,7 +48,7 @@ jobs:
           echo "BOX86_COMPILER=arm-linux-gnueabihf-gcc" >> $GITHUB_ENV
           sudo apt-get -y install git gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf cmake make python3 wget
           git clone https://github.com/ptitSeb/box86.git
-          git clone https://github.com/ptitSeb/box64.git    
+          git clone https://github.com/ptitSeb/box64.git && cd box64 && git checkout ${{ github.event.inputs.commit }} && cd ..
 
       - name: "Build Box64"
         run: |
