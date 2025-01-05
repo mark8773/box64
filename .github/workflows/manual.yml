@@ -4,6 +4,11 @@ name: Custom build Box64
 on:
   workflow_dispatch:
     inputs:
+      box86_build:
+        description: 'Build box86'
+        required: true
+        default: 'false'
+        type: boolean
       commit:
         description: 'Needed commit'
         required: true
@@ -65,6 +70,7 @@ jobs:
           cd ../..
 
       - name: "Build Box86"
+        if: ${{ inputs.box86_build == 'true' }}
         run: |
           cd box86
           mkdir build
@@ -75,6 +81,9 @@ jobs:
                    -DHAVE_TRACE:BOOL=${{ github.event.inputs.trace }}\
                    -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
           make -j$(nproc) VERBOSE=1
+
+      - name: "Finally"
+        run: |
           cd ../..
           mkdir buildsss
           cp box64/build/box64 buildsss
