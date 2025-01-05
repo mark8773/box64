@@ -83,12 +83,15 @@ jobs:
           make -j$(nproc) VERBOSE=1
 
       - name: "Finally"
+        env:
+          BOX86_BUILD: ${{ inputs.box86_build }}
         run: |
           cd ../..
           mkdir buildsss
           cp box64/build/box64 buildsss
-          cp box86/build/box86 buildsss
-          
+          if [ "$BOX86_BUILD" = "true" ]; then
+              cp box86/build/box86 buildsss
+          fi
 
       - name: "Upload Artifact"
         uses: actions/upload-artifact@v4
