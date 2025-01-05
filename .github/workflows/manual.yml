@@ -91,8 +91,8 @@ jobs:
           BOX86_BUILD: ${{ inputs.box86_build }}
         run: |
           cd ../..
-          ls
-          ls box64
+          ls -la
+          ls -la box64
           ls box64/build
           mkdir buildsss
           cp box64/build/box64 buildsss
