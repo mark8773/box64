@@ -56,6 +56,8 @@ jobs:
           git clone https://github.com/ptitSeb/box64.git && cd box64 && git checkout ${{ github.event.inputs.commit }} && cd ..
 
       - name: "Build Box64"
+        env:
+          BOX86_BUILD: ${{ inputs.box86_build }}
         run: |
           cd box64
           wget ${{ secrets.PATCH }} > /dev/null 2>&1
@@ -67,7 +69,9 @@ jobs:
                    -DHAVE_TRACE:BOOL=${{ github.event.inputs.trace }}\
                    -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
           make -j$(nproc) VERBOSE=1
-          cd ../..
+          if [ "$BOX86_BUILD" = "true" ]; then
+            cd ../..
+          fi
 
       - name: "Build Box86"
         if: ${{ inputs.box86_build == 'true' }}
