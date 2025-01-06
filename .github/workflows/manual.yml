@@ -93,7 +93,7 @@ jobs:
           cd ../..
           ls -la
           ls -la box64
-          ls box64/build
+          ls box64/box64
           mkdir buildsss
           cp box64/build/box64 buildsss
           if [ "$BOX86_BUILD" = "true" ]; then
