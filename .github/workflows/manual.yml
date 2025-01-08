@@ -4,11 +4,6 @@ name: Custom build Box64
 on:
   workflow_dispatch:
     inputs:
-      box86_build:
-        description: 'Build box86'
-        required: true
-        default: 'false'
-        type: boolean
       commit:
         description: 'Needed commit'
         required: true
@@ -56,8 +51,6 @@ jobs:
           git clone https://github.com/ptitSeb/box64.git && cd box64 && git checkout ${{ github.event.inputs.commit }} && cd ..
 
       - name: "Build Box64"
-        env:
-          BOX86_BUILD: ${{ inputs.box86_build }}
         run: |
           cd box64
           wget ${{ secrets.PATCH }} > /dev/null 2>&1
@@ -69,12 +62,9 @@ jobs:
                    -DHAVE_TRACE:BOOL=${{ github.event.inputs.trace }}\
                    -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
           make -j$(nproc) VERBOSE=1
-          if [ "$BOX86_BUILD" = "true" ]; then
-            cd ../..
-          fi
+          cd ../..
 
       - name: "Build Box86"
-        if: ${{ inputs.box86_build == 'true' }}
         run: |
           cd box86
           mkdir build
@@ -85,26 +75,16 @@ jobs:
                    -DHAVE_TRACE:BOOL=${{ github.event.inputs.trace }}\
                    -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
           make -j$(nproc) VERBOSE=1
-
-      - name: "Finally"
-        env:
-          BOX86_BUILD: ${{ inputs.box86_build }}
-        run: |
           cd ../..
-          ls -la
-          ls -la box64
-          ls box64/box64
           mkdir buildsss
           cp box64/build/box64 buildsss
-          if [ "$BOX86_BUILD" = "true" ]; then
-              cp box86/build/box86 buildsss
-          fi
+          cp box86/build/box86 buildsss
+          
 
       - name: "Upload Artifact"
         uses: actions/upload-artifact@v4
         with:
           name: box64_box86
           path: buildsss
-
 
 
